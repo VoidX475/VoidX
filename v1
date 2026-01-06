@@ -1,5 +1,5 @@
 --------------------------------------------------
--- RAYFIELD + HD ADMIN BASIC FLY (GUI SAFE)
+-- RAYFIELD FUN GUI (HACKING 😈)
 --------------------------------------------------
 
 -- SERVICES
@@ -11,36 +11,30 @@ local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 --------------------------------------------------
--- LOAD RAYFIELD FIRST (NICHTS DAVOR!)
+-- LOAD RAYFIELD
 --------------------------------------------------
 local Rayfield = loadstring(game:HttpGet(
 	"https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua"
 ))()
 
 --------------------------------------------------
--- WINDOW + KEY
+-- WINDOW (NAME CHANGED)
 --------------------------------------------------
 local Window = Rayfield:CreateWindow({
-	Name = "Admin Panel",
-	LoadingTitle = "Admin",
-	LoadingSubtitle = "HD Admin Fly",
-	KeySystem = true,
-	KeySettings = {
-		Title = "Key System",
-		Subtitle = "Enter Key",
-		Note = "Key = ADMIN",
-		SaveKey = false,
-		Key = "ADMIN"
-	}
+	Name = "Hacking",
+	LoadingTitle = "Hacking",
+	LoadingSubtitle = "just for fun 😈",
+	KeySystem = false
 })
 
 --------------------------------------------------
 -- TAB
 --------------------------------------------------
 local PlayerTab = Window:CreateTab("Player", 4483362458)
+local FunTab = Window:CreateTab("Fun / Visual", 4483362458)
 
 --------------------------------------------------
--- CHARACTER (SAFE)
+-- CHARACTER
 --------------------------------------------------
 local character, humanoid, hrp
 
@@ -54,56 +48,34 @@ setupCharacter()
 player.CharacterAdded:Connect(setupCharacter)
 
 --------------------------------------------------
--- FLY STATE
+-- FLY
 --------------------------------------------------
 local FlyEnabled = false
 local FlySpeed = 50
+local bodyVel, bodyGyro
 
-local bodyVel = nil
-local bodyGyro = nil
-
---------------------------------------------------
--- FLY FUNCTIONS (HD ADMIN STYLE)
---------------------------------------------------
 local function startFly()
-	if FlyEnabled or not hrp or not humanoid then return end
+	if FlyEnabled or not hrp then return end
 	FlyEnabled = true
-
 	humanoid.PlatformStand = true
 
-	bodyVel = Instance.new("BodyVelocity")
-	bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-	bodyVel.Velocity = Vector3.zero
-	bodyVel.Parent = hrp
+	bodyVel = Instance.new("BodyVelocity", hrp)
+	bodyVel.MaxForce = Vector3.new(9e9,9e9,9e9)
 
-	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro = Instance.new("BodyGyro", hrp)
 	bodyGyro.P = 9e4
-	bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-	bodyGyro.CFrame = hrp.CFrame
-	bodyGyro.Parent = hrp
+	bodyGyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
 end
 
 local function stopFly()
 	FlyEnabled = false
-
-	if humanoid then
-		humanoid.PlatformStand = false
-	end
-
-	if bodyVel then bodyVel:Destroy() bodyVel = nil end
-	if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
-
-	if hrp then
-		hrp.AssemblyLinearVelocity = Vector3.zero
-	end
+	if humanoid then humanoid.PlatformStand = false end
+	if bodyVel then bodyVel:Destroy() end
+	if bodyGyro then bodyGyro:Destroy() end
 end
 
---------------------------------------------------
--- MOVEMENT LOOP (SAFE)
---------------------------------------------------
 RunService.RenderStepped:Connect(function()
-	if not FlyEnabled or not bodyVel or not bodyGyro then return end
-
+	if not FlyEnabled or not bodyVel then return end
 	local dir = Vector3.zero
 
 	if UIS:IsKeyDown(Enum.KeyCode.W) then dir += camera.CFrame.LookVector end
@@ -114,110 +86,85 @@ RunService.RenderStepped:Connect(function()
 	if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then dir -= camera.CFrame.UpVector end
 
 	if dir.Magnitude > 0 then
-		dir = dir.Unit * FlySpeed
+		bodyVel.Velocity = dir.Unit * FlySpeed
 	end
 
-	bodyVel.Velocity = dir
 	bodyGyro.CFrame = camera.CFrame
 end)
 
 --------------------------------------------------
--- UI ELEMENTS
+-- FLY UI
 --------------------------------------------------
 PlayerTab:CreateToggle({
-	Name = "HD Admin Fly",
-	CurrentValue = false,
+	Name = "Fly",
 	Callback = function(v)
 		if v then startFly() else stopFly() end
 	end
 })
 
---------------------------------------------------
--- FLY SPEED SLIDER + INPUT
---------------------------------------------------
-local FlySpeedInput = FlySpeed
-
 PlayerTab:CreateSlider({
 	Name = "Fly Speed",
-	Range = {20,150},
+	Range = {20,300},
 	CurrentValue = 50,
 	Callback = function(v)
 		FlySpeed = v
-		FlySpeedInput = v
 	end
 })
 
 PlayerTab:CreateInput({
-	Name = "Set Fly Speed",
-	PlaceholderText = "Enter speed (number)",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(text)
-		local num = tonumber(text)
-		if num and num > 0 then
-			FlySpeed = num
-			FlySpeedInput = num
-			Rayfield:Notify({
-				Title = "Fly Speed Set",
-				Content = "Fly speed is now " .. tostring(num),
-				Duration = 3
-			})
-		else
-			Rayfield:Notify({
-				Title = "Invalid Input",
-				Content = "Enter a valid positive number",
-				Duration = 3
-			})
-		end
+	Name = "Fly Speed (Number)",
+	PlaceholderText = "e.g. 150",
+	Callback = function(t)
+		local n = tonumber(t)
+		if n then FlySpeed = n end
 	end
 })
 
 --------------------------------------------------
--- SAFETY RESET
---------------------------------------------------
-player.CharacterAdded:Connect(function()
-	stopFly()
-end)
-
---------------------------------------------------
--- NOCLIP (FIXED)
+-- NOCLIP
 --------------------------------------------------
 local NoClip = false
 
-local function updateNoClip()
-	if not character then return end
-	for _, v in pairs(character:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.CanCollide = not NoClip
+RunService.Stepped:Connect(function()
+	if NoClip and character then
+		for _,p in pairs(character:GetDescendants()) do
+			if p:IsA("BasePart") then
+				p.CanCollide = false
+			end
 		end
 	end
-end
+end)
 
 PlayerTab:CreateToggle({
 	Name = "NoClip",
-	CurrentValue = false,
 	Callback = function(v)
 		NoClip = v
-		updateNoClip()
 	end
 })
 
-RunService.Stepped:Connect(function()
-	if NoClip then updateNoClip() end
-end)
+--------------------------------------------------
+-- JUMP BOOST
+--------------------------------------------------
+PlayerTab:CreateSlider({
+	Name = "Jump Boost",
+	Range = {50,400},
+	CurrentValue = 50,
+	Callback = function(v)
+		if humanoid then humanoid.JumpPower = v end
+	end
+})
 
 --------------------------------------------------
--- ADMIN TAG OVER HEAD
+-- ADMIN TAG (FUN)
 --------------------------------------------------
-local AdminTagEnabled = false
 local adminGui
-
-local function removeAdminTag()
-	if adminGui then adminGui:Destroy() adminGui = nil end
-end
+local adminColor = Color3.fromRGB(255,0,0)
+local RGB = false
 
 local function createAdminTag()
-	removeAdminTag()
+	if adminGui then adminGui:Destroy() end
 	if not character then return end
+
 	local head = character:FindFirstChild("Head")
 	if not head then return end
 
@@ -227,69 +174,58 @@ local function createAdminTag()
 	adminGui.AlwaysOnTop = true
 
 	local txt = Instance.new("TextLabel", adminGui)
+	txt.Name = "Text"
 	txt.Size = UDim2.new(1,0,1,0)
 	txt.BackgroundTransparency = 1
-	txt.Text = "ADMIN"
+	txt.Text = "HACKING"
 	txt.Font = Enum.Font.GothamBlack
 	txt.TextScaled = true
-	txt.TextColor3 = Color3.fromRGB(255,50,50)
 	txt.TextStrokeTransparency = 0
+	txt.TextColor3 = adminColor
 end
 
-PlayerTab:CreateToggle({
-	Name = "Admin Tag",
-	CurrentValue = false,
+FunTab:CreateToggle({
+	Name = "Overhead Text",
 	Callback = function(v)
-		AdminTagEnabled = v
-		if v then createAdminTag() else removeAdminTag() end
+		if v then createAdminTag()
+		elseif adminGui then adminGui:Destroy() end
 	end
 })
 
-player.CharacterAdded:Connect(function()
-	task.wait(1)
-	if AdminTagEnabled then createAdminTag() end
+--------------------------------------------------
+-- ADMIN TAG COLOR
+--------------------------------------------------
+FunTab:CreateColorPicker({
+	Name = "Text Color",
+	Default = adminColor,
+	Callback = function(c)
+		adminColor = c
+		if adminGui and adminGui:FindFirstChild("Text") then
+			adminGui.Text.TextColor3 = c
+		end
+	end
+})
+
+--------------------------------------------------
+-- RGB MODE
+--------------------------------------------------
+FunTab:CreateToggle({
+	Name = "RGB Text",
+	Callback = function(v)
+		RGB = v
+	end
+})
+
+RunService.RenderStepped:Connect(function()
+	if RGB and adminGui and adminGui:FindFirstChild("Text") then
+		local h = (tick() % 5) / 5
+		adminGui.Text.TextColor3 = Color3.fromHSV(h,1,1)
+	end
 end)
-
---------------------------------------------------
--- TELEPORT TO PLAYER
---------------------------------------------------
-local TpTargetName = ""
-
-PlayerTab:CreateInput({
-	Name = "TP Player Name",
-	PlaceholderText = "Enter name",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(text)
-		TpTargetName = text
-	end
-})
-
-local function findPlayer(name)
-	name = string.lower(name)
-	for _, p in pairs(Players:GetPlayers()) do
-		if string.find(string.lower(p.Name), name, 1, true) then
-			return p
-		end
-	end
-end
-
-PlayerTab:CreateButton({
-	Name = "Teleport To Player",
-	Callback = function()
-		local target = findPlayer(TpTargetName)
-		if target and target.Character and hrp then
-			local th = target.Character:FindFirstChild("HumanoidRootPart")
-			if th then
-				hrp.CFrame = th.CFrame * CFrame.new(0,0,-3)
-			end
-		end
-	end
-})
 
 --------------------------------------------------
 Rayfield:Notify({
 	Title = "Loaded",
-	Content = "Admin Panel fully loaded with Fly Speed input",
+	Content = "Hacking GUI loaded 😈",
 	Duration = 4
 })
-
